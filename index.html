@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Красная Книга: Пазл</title>
+<style>
+:root{
+  --paper:#F6F1E4;
+  --paper-dark:#EDE4CC;
+  --ink:#26301F;
+  --forest:#1B4332;
+  --moss:#2E6F40;
+  --gold:#B8860B;
+  --clay:#B3452A;
+  --card:#FFFDF7;
+  --shadow: 0 6px 18px rgba(27,67,50,0.18);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(46,111,64,0.06), transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(184,134,11,0.08), transparent 45%),
+    var(--paper);
+  color:var(--ink);
+  overflow:hidden;
+  user-select:none;
+}
+#app{position:relative; width:100%; height:100%;}
+.screen{
+  position:absolute; inset:0;
+  display:none;
+  flex-direction:column;
+  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
+  overflow-y:auto;
+}
+.screen.active{display:flex;}
+
+h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--forest);}
+
+/* ---------- MENU ---------- */
+#screen-menu{align-items:center; justify-content:center; text-align:center; gap:6px;}
+.brand-mark{
+  width:86px; height:86px; margin-bottom:10px;
+  border-radius:50%;
+  background: var(--forest);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: var(--shadow);
+  border: 3px solid var(--gold);
+}
+.brand-mark svg{width:52px; height:52px;}
+#screen-menu h1{font-size:28px; letter-spacing:0.5px;}
+#screen-menu .tagline{color:#5b6b52; font-size:14px; margin-top:2px; margin-bottom:22px; max-width:280px;}
+.btn{
+  font-family: inherit;
+  font-size:16px;
+  font-weight:600;
+  padding:14px 30px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  box-shadow: var(--shadow);
+  transition: transform .12s ease;
+}
+.btn:active{transform: scale(0.96);}
+.btn-primary{background:var(--moss); color:#fff;}
+.btn-secondary{background:var(--card); color:var(--forest); border:2px solid var(--moss);}
+.btn-gold{background:var(--gold); color:#fff;}
+.menu-stack{display:flex; flex-direction:column; gap:12px; width:220px;}
+
+/* ---------- TOPBAR ---------- */
+.topbar{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:14px;
+}
+.icon-btn{
+  width:40px; height:40px; border-radius:10px;
+  background:var(--card); border:2px solid var(--paper-dark);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; cursor:pointer; color:var(--forest); flex-shrink:0;
+}
+.topbar h2{flex:1; font-size:19px;}
+
+/* ---------- LEVEL SELECT ---------- */
+.level-list{display:flex; flex-direction:column; gap:14px; padding-bottom:20px;}
+.level-card{
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+  display:flex; gap:12px; align-items:center;
+  box-shadow: var(--shadow);
+  border:1px solid var(--paper-dark);
+  cursor:pointer;
+  position:relative;
+}
+.level-thumb{
+  width:64px; height:64px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--paper-dark);
+}
+.level-thumb svg{width:100%; height:100%;}
+.level-info{flex:1; min-width:0;}
+.level-info .name{font-weight:700; color:var(--forest); font-size:16px;}
+.level-info .meta{font-size:12px; color:#6b7a63; margin-top:3px;}
+.level-info .diff-pill{
+  display:inline-block; margin-top:6px; font-size:11px; padding:2px 9px;
+  border-radius:20px; background:var(--paper-dark); color:var(--moss); font-weight:600;
+}
+.level-card.done::after{
+  content:"✓ Собрано";
+  position:absolute; top:10px; right:12px;
+  font-size:11px; font-weight:700; color:var(--gold);
+}
+
+/* ---------- GAME SCREEN ---------- */
+#screen-game{padding-bottom:0;}
+.mode-toggle{
+  display:flex; background:var(--paper-dark); border-radius:20px; padding:3px; flex-shrink:0;
+}
+.mode-toggle button{
+  border:none; background:transparent; padding:7px 13px; border-radius:16px;
+  font-size:12px; font-weight:700; color:var(--forest); cursor:pointer;
+}
+.mode-toggle button.active{background:var(--moss); color:#fff;}
+
+.progress-wrap{
+  height:8px; background:var(--paper-dark); border-radius:6px; overflow:hidden; margin-bottom:14px; flex-shrink:0;
+}
+.progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--moss),var(--gold)); transition:width .25s ease;}
+
+.board-wrap{flex:1; display:flex; align-items:center; justify-content:center; min-height:0;}
+#grid{
+  display:grid;
+  gap:3px;
+  background:var(--forest);
+  padding:6px;
+  border-radius:12px;
+  box-shadow: var(--shadow);
+  touch-action:none;
+}
+.slot{
+  background: rgba(255,255,255,0.15);
+  border-radius:3px;
+  position:relative;
+}
+.slot.filled{background:transparent;}
+.slot .piece-in-slot{position:absolute; inset:0;}
+
+#text-board{
+  display:flex; flex-direction:column; gap:8px; width:100%; max-width:420px; margin:0 auto;
+}
+.text-slot{
+  min-height:46px; border:2px dashed var(--moss); border-radius:10px;
+  background:rgba(255,255,255,0.5);
+  display:flex; align-items:center; padding:0 12px; font-size:13px; color:#8a9583;
+}
+.text-slot.filled{border-style:solid; background:var(--card); color:var(--ink);}
+
+.tray-wrap{flex-shrink:0; padding:12px 0 max(12px, env(safe-area-inset-bottom));}
+.tray{
+  display:flex; gap:10px; overflow-x:auto; padding:8px 4px;
+  background:var(--paper-dark); border-radius:14px;
+  min-height:74px; align-items:center;
+  touch-action:pan-x;
+}
+.piece{
+  border-radius:6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  flex-shrink:0;
+  cursor:grab;
+  border:2px solid #fff;
+}
+.piece.dragging{
+  position:fixed; z-index:999; pointer-events:none;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  transform: scale(1.08) rotate(-2deg);
+}
+.text-chip{
+  flex-shrink:0; background:var(--card); border:2px solid var(--gold);
+  border-radius:10px; padding:10px 14px; font-size:12.5px; max-width:220px;
+  cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,0.18);
+}
+.text-chip.dragging{position:fixed; z-index:999; pointer-events:none; transform:scale(1.05);}
+
+.tray-actions{display:flex; gap:10px; margin-top:10px; justify-content:center;}
+.tray-actions .btn{padding:10px 18px; font-size:13px;}
+
+/* ---------- RESULT MODAL ---------- */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(27,48,31,0.55);
+  display:none; align-items:center; justify-content:center; z-index:500; padding:20px;
+}
+.modal-overlay.active{display:flex;}
+.modal{
+  background:var(--card); border-radius:18px; max-width:380px; width:100%;
+  max-height:88vh; overflow-y:auto; padding:20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  border-top: 6px solid var(--gold);
+  position:relative;
+}
+.modal .full-art{
+  width:100%; aspect-ratio:1/1; border-radius:12px; overflow:hidden; margin-bottom:14px;
+  box-shadow: inset 0 0 0 4px var(--gold);
+}
+.modal .full-art svg{width:100%; height:100%; display:block;}
+.status-badge{
+  display:inline-block; background:var(--clay); color:#fff; font-size:11px; font-weight:700;
+  padding:4px 10px; border-radius:20px; margin:6px 0 10px;
+}
+.modal .latin{font-style:italic; color:#7a8571; font-size:13px; margin-bottom:10px;}
+.fact-list{list-style:none; padding:0; margin:0 0 16px; display:flex; flex-direction:column; gap:8px;}
+.fact-list li{font-size:13.5px; padding-left:18px; position:relative; line-height:1.4;}
+.fact-list li::before{content:"🌿"; position:absolute; left:-2px; top:0; font-size:11px;}
+.modal-actions{display:flex; flex-direction:column; gap:9px;}
+.modal-actions .btn{width:100%;}
+
+/* ---------- COLLECTION ---------- */
+.collection-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.collection-item{
+  aspect-ratio:1/1; border-radius:12px; background:var(--card);
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
+  border:1px solid var(--paper-dark);
+}
+.collection-item.locked{opacity:0.35;}
+.collection-item svg{width:70%; height:70%;}
+
+/* toast */
+#toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+  background:var(--forest); color:#fff; padding:10px 18px; border-radius:20px;
+  font-size:13px; opacity:0; transition:all .25s ease; z-index:900; pointer-events:none;
+  box-shadow:var(--shadow);
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== MENU ===================== -->
+  <div class="screen active" id="screen-menu">
+    <div class="brand-mark">
+      <svg viewBox="0 0 64 64"><path d="M32 6C22 14 12 20 8 30c-3 8 1 18 10 22 5 2 9 0 14-4 5 4 9 6 14 4 9-4 13-14 10-22C52 20 42 14 32 6Z" fill="#F6F1E4"/><path d="M32 16c3 8 3 16 0 24" stroke="#B8860B" stroke-width="2" fill="none"/></svg>
+    </div>
+    <h1>Красная Книга: Пазл</h1>
+    <p class="tagline">Собирайте пазлы редких животных и пополняйте свою Красную книгу</p>
+    <div class="menu-stack">
+      <button class="btn btn-primary" onclick="App.goTo('levels')">Играть</button>
+      <button class="btn btn-secondary" onclick="App.openCollection()">Коллекция</button>
+    </div>
+  </div>
+
+  <!-- ===================== LEVEL SELECT ===================== -->
+  <div class="screen" id="screen-levels">
+    <div class="topbar">
+      <div class="icon-btn" onclick="App.goTo('menu')">←</div>
+      <h2>Выберите пазл</h2>
+    </div>
+    <div class="level-list" id="level-list"></div>
+  </div>
+
+  <!-- ===================== COLLECTION ===================== -->
+  <div class="screen" id="screen-collection">
+    <div class="topbar">
+      <div class="icon-btn" onclick="App.goTo('menu')">←</div>
+      <h2>Моя коллекция</h2>
+    </div>
+    <div class="collection-grid" id="collection-grid"></div>
+  </div>
+
+  <!-- ===================== GAME ===================== -->
+  <div class="screen" id="screen-game">
+    <div class="topbar">
+      <div class="icon-btn" onclick="Game.exit()">←</div>
+      <h2 id="game-title">Животное</h2>
+      <div class="mode-toggle">
+        <button id="mode-pic-btn" class="active" onclick="Game.setMode('picture')">Картина</button>
+        <button id="mode-text-btn" onclick="Game.setMode('text')">Текст</button>
+      </div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+
+    <div class="board-wrap">
+      <div id="grid"></div>
+      <div id="text-board" style="display:none;"></div>
+    </div>
+
+    <div class="tray-wrap">
+      <div class="tray" id="tray"></div>
+      <div class="tray-actions">
+        <button class="btn btn-gold" onclick="Game.useHint()">💡 Подсказка (реклама)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== RESULT MODAL ===================== -->
+<div class="modal-overlay" id="modal-result">
+  <div class="modal">
+    <div class="full-art" id="modal-art"></div>
+    <h2 id="modal-name">Название</h2>
+    <div class="latin" id="modal-latin">Latinus nomen</div>
+    <div class="status-badge" id="modal-status">Статус</div>
+    <ul class="fact-list" id="modal-facts"></ul>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modal-next-btn" onclick="Game.next()">Следующий пазл</button>
+      <button class="btn btn-secondary" onclick="Game.share()">Поделиться</button>
+      <button class="btn btn-secondary" onclick="App.goTo('menu'); Modal.close();">На главную</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   КРАСНАЯ КНИГА: ПАЗЛ — прототип игровой логики
+   Готов для встраивания в VK Mini App / VK Play (HTML5).
+   Для реального деплоя на VK:
+     1) Подключить SDK:  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+     2) Вызвать vkBridge.send('VKWebAppInit') при старте (см. VK.init ниже).
+     3) Настроить манифест мини-приложения в кабинете VK Play.
+     4) Заменить SVG-плейсхолдеры на финальные PNG/JPG ассеты (1024×1024).
+   ========================================================================= */
+
+/* ---------------------- VK BRIDGE WRAPPER ---------------------- */
+const VK = {
+  bridge: (typeof window !== "undefined" && window.vkBridge) ? window.vkBridge : null,
+  ready:false,
+  init(){
+    if(this.bridge){
+      this.bridge.send('VKWebAppInit').then(()=>{ this.ready = true; }).catch(()=>{});
+    }
+  },
+  // Награждаемая реклама за подсказку / открытие раздела
+  showRewardedAd(onSuccess){
+    if(this.bridge){
+      this.bridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' })
+        .then((data)=>{ if(data && data.result){ onSuccess(); } })
+        .catch(()=>{ toast('Реклама недоступна'); });
+    } else {
+      // Локальная заглушка для тестирования вне VK
+      if(confirm('[Заглушка] Показать рекламу за подсказку?')) onSuccess();
+    }
+  },
+  shareResult(text){
+    if(this.bridge){
+      this.bridge.send('VKWebAppShare', { link: 'https://vk.com/app/red_book_puzzle' }).catch(()=>{});
+    } else {
+      toast('Поделиться: ' + text);
+    }
+  },
+  saveProgress(key, value){
+    // В реальном приложении: VKWebAppStorageSet. Здесь — localStorage.
+    try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
+  },
+  loadProgress(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+};
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* ---------------------- ОРИГИНАЛЬНЫЕ ИЛЛЮСТРАЦИИ (SVG) ---------------------- */
+/* Простая плоская векторная графика — заглушки под финальные ассеты художника. */
+const ART = {
+  tiger: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#E8862A"/>
+    <path d="M0 140 Q100 110 200 140 V200 H0 Z" fill="#2E6F40" opacity="0.35"/>
+    <ellipse cx="100" cy="120" rx="60" ry="50" fill="#F0902E"/>
+    <circle cx="70" cy="70" r="30" fill="#F0902E"/>
+    <circle cx="130" cy="70" r="30" fill="#F0902E"/>
+    <circle cx="58" cy="60" r="9" fill="#F0902E"/>
+    <circle cx="142" cy="60" r="9" fill="#F0902E"/>
+    <g stroke="#26301F" stroke-width="6" fill="none" stroke-linecap="round">
+      <path d="M55 55 L45 40"/><path d="M70 45 L65 28"/><path d="M90 40 L90 22"/>
+      <path d="M145 55 L155 40"/><path d="M130 45 L135 28"/>
+      <path d="M60 115 L40 110"/><path d="M60 130 L38 132"/>
+      <path d="M140 115 L160 110"/><path d="M140 130 L162 132"/>
+      <path d="M100 150 L100 168"/>
+    </g>
+    <circle cx="82" cy="72" r="5" fill="#26301F"/><circle cx="118" cy="72" r="5" fill="#26301F"/>
+    <path d="M92 90 Q100 96 108 90" stroke="#26301F" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </svg>`,
+  bear: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#BFE0EE"/>
+    <rect y="150" width="200" height="50" fill="#EAF3EC"/>
+    <ellipse cx="100" cy="120" rx="58" ry="50" fill="#FCFCFA"/>
+    <circle cx="66" cy="72" r="26" fill="#FCFCFA"/>
+    <circle cx="134" cy="72" r="26" fill="#FCFCFA"/>
+    <circle cx="58" cy="65" r="9" fill="#F4F1E4"/><circle cx="142" cy="65" r="9" fill="#F4F1E4"/>
+    <ellipse cx="100" cy="120" rx="20" ry="16" fill="#F4F1E4"/>
+    <circle cx="100" cy="112" r="7" fill="#26301F"/>
+    <circle cx="80" cy="100" r="4" fill="#26301F"/><circle cx="120" cy="100" r="4" fill="#26301F"/>
+  </svg>`,
+  crane: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#EAF3EC"/>
+    <rect y="160" width="200" height="40" fill="#B7D6C4"/>
+    <ellipse cx="100" cy="120" rx="34" ry="46" fill="#FFFFFF" stroke="#26301F" stroke-width="2"/>
+    <path d="M100 80 Q90 40 70 20" stroke="#FFFFFF" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M100 80 Q90 40 70 20" stroke="#26301F" stroke-width="2" fill="none"/>
+    <circle cx="70" cy="20" r="10" fill="#26301F"/>
+    <path d="M60 20 L30 14" stroke="#E8862A" stroke-width="4" stroke-linecap="round"/>
+    <path d="M85 150 L80 190" stroke="#E8862A" stroke-width="5" stroke-linecap="round"/>
+    <path d="M115 150 L120 190" stroke="#E8862A" stroke-width="5" stroke-linecap="round"/>
+    <path d="M120 110 Q150 100 170 70" stroke="#26301F" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </svg>`
+};
+
+function svgToDataUri(svg){
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+/* ---------------------- КОНТЕНТ ПАЗЛОВ ---------------------- */
+const PUZZLES = [
+  {
+    id:"tiger", name:"Амурский тигр", latin:"Panthera tigris altaica",
+    status:"Находится под угрозой исчезновения", grid:3, art:ART.tiger,
+    facts:[
+      "Самый крупный подвид тигра в мире.",
+      "Обитает на Дальнем Востоке России, в Приморье и Приамурье.",
+      "Взрослый тигр способен пройти за сутки до 40 км в поисках добычи.",
+      "В дикой природе осталось около 500–600 особей.",
+      "Занесён в Красную книгу России как вид, находящийся под угрозой исчезновения."
+    ]
+  },
+  {
+    id:"bear", name:"Белый медведь", latin:"Ursus maritimus",
+    status:"Уязвимый вид", grid:4, art:ART.bear,
+    facts:[
+      "Крупнейший наземный хищник планеты.",
+      "Живёт на арктическом побережье и дрейфующих льдах Северного Ледовитого океана.",
+      "Отличный пловец — может преодолевать десятки километров вплавь.",
+      "Основная угроза — сокращение площади морского льда из-за изменения климата.",
+      "Занесён в Красную книгу России и Международный список охраняемых видов."
+    ]
+  },
+  {
+    id:"crane", name:"Стерх (белый журавль)", latin:"Grus leucogeranus",
+    status:"Находится под угрозой исчезновения", grid:5, art:ART.crane,
+    facts:[
+      "Один из самых редких журавлей в мире.",
+      "Гнездится в тундре Якутии и Западной Сибири.",
+      "Совершает перелёт на зимовку в Китай на расстояние более 5000 км.",
+      "Издаёт характерный трубный крик, который слышен за несколько километров.",
+      "Символ бережного отношения к природе — программа «Полёт надежды» помогает восстановить его популяцию."
+    ]
+  }
+];
+
+/* ---------------------- ХРАНИЛИЩЕ ПРОГРЕССА ---------------------- */
+const Progress = {
+  data: VK.loadProgress('rk_progress', { completed: [] }),
+  isDone(id){ return this.data.completed.includes(id); },
+  markDone(id){
+    if(!this.isDone(id)){ this.data.completed.push(id); VK.saveProgress('rk_progress', this.data); }
+  }
+};
+
+/* ---------------------- НАВИГАЦИЯ ---------------------- */
+const App = {
+  goTo(name){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+    if(name==='levels') App.renderLevels();
+    if(name==='collection') App.renderCollection();
+  },
+  renderLevels(){
+    const list = document.getElementById('level-list');
+    list.innerHTML = '';
+    PUZZLES.forEach(p=>{
+      const done = Progress.isDone(p.id);
+      const card = document.createElement('div');
+      card.className = 'level-card' + (done ? ' done':'');
+      card.onclick = ()=>Game.start(p.id);
+      card.innerHTML = `
+        <div class="level-thumb">${p.art}</div>
+        <div class="level-info">
+          <div class="name">${p.name}</div>
+          <div class="meta">${p.grid}×${p.grid} фрагментов</div>
+          <span class="diff-pill">${p.grid<=3?'Лёгкий':p.grid===4?'Средний':'Сложный'}</span>
+        </div>`;
+      list.appendChild(card);
+    });
+  },
+  renderCollection(){
+    const grid = document.getElementById('collection-grid');
+    grid.innerHTML = '';
+    PUZZLES.forEach(p=>{
+      const done = Progress.isDone(p.id);
+      const el = document.createElement('div');
+      el.className = 'collection-item' + (done ? '' : ' locked');
+      el.innerHTML = done ? p.art : `<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v3H6a1 1 0 00-1 1v9a1 1 0 001 1h12a1 1 0 001-1v-9a1 1 0 00-1-1h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 016 0v3H9z" fill="#5b6b52"/></svg>`;
+      grid.appendChild(el);
+    });
+  },
+  openCollection(){ this.goTo('collection'); }
+};
+
+/* ---------------------- ИГРОВАЯ ЛОГИКА ---------------------- */
+const Game = {
+  current:null,
+  mode:'picture',
+  filledCount:0,
+  totalCount:0,
+
+  start(id){
+    this.current = PUZZLES.find(p=>p.id===id);
+    this.mode = 'picture';
+    document.getElementById('mode-pic-btn').classList.add('active');
+    document.getElementById('mode-text-btn').classList.remove('active');
+    document.getElementById('game-title').textContent = this.current.name;
+    App.goTo('game');
+    this.buildPicture();
+  },
+
+  exit(){ App.goTo('levels'); },
+
+  setMode(mode){
+    if(this.mode === mode) return;
+    this.mode = mode;
+    document.getElementById('mode-pic-btn').classList.toggle('active', mode==='picture');
+    document.getElementById('mode-text-btn').classList.toggle('active', mode==='text');
+    document.getElementById('grid').style.display = mode==='picture' ? 'grid' : 'none';
+    document.getElementById('text-board').style.display = mode==='text' ? 'flex' : 'none';
+    if(mode==='picture') this.buildPicture(); else this.buildText();
+  },
+
+  updateProgress(){
+    const pct = this.totalCount ? Math.round((this.filledCount/this.totalCount)*100) : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  },
+
+  /* ---------- РЕЖИМ «КАРТИНА»: drag & drop фрагментов сетки ---------- */
+  buildPicture(){
+    const p = this.current;
+    const n = p.grid;
+    const grid = document.getElementById('grid');
+    const tray = document.getElementById('tray');
+    grid.innerHTML = ''; tray.innerHTML = '';
+    grid.style.display = 'grid';
+    document.getElementById('text-board').style.display = 'none';
+
+    const boardSize = Math.min(window.innerWidth - 40, 340);
+    const cell = Math.floor(boardSize / n);
+    grid.style.gridTemplateColumns = `repeat(${n}, ${cell}px)`;
+    grid.style.gridTemplateRows = `repeat(${n}, ${cell}px)`;
+
+    this.totalCount = n*n; this.filledCount = 0; this.updateProgress();
+
+    // slots
+    const slots = [];
+    for(let r=0;r<n;r++){
+      for(let c=0;c<n;c++){
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.dataset.r = r; slot.dataset.c = c;
+        grid.appendChild(slot);
+        slots.push(slot);
+      }
+    }
+
+    // pieces (shuffled)
+    const order = [];
+    for(let r=0;r<n;r++) for(let c=0;c<n;c++) order.push({r,c});
+    shuffle(order);
+
+    const imgUri = svgToDataUri(p.art);
+    order.forEach(pos=>{
+      const piece = document.createElement('div');
+      piece.className = 'piece';
+      piece.style.width = cell+'px';
+      piece.style.height = cell+'px';
+      piece.style.backgroundImage = `url("${imgUri}")`;
+      piece.style.backgroundSize = `${cell*n}px ${cell*n}px`;
+      piece.style.backgroundPosition = `-${pos.c*cell}px -${pos.r*cell}px`;
+      piece.dataset.r = pos.r; piece.dataset.c = pos.c;
+      tray.appendChild(piece);
+      makeDraggable(piece, cell);
+    });
+  },
+
+  checkPictureComplete(){
+    if(this.filledCount === this.totalCount){
+      Progress.markDone(this.current.id);
+      setTimeout(()=>Modal.open(this.current), 350);
+    }
+  },
+
+  /* ---------- РЕЖИМ «ТЕКСТ»: сборка фактов в верном порядке ---------- */
+  buildText(){
+    const p = this.current;
+    const board = document.getElementById('text-board');
+    const tray = document.getElementById('tray');
+    board.innerHTML = ''; tray.innerHTML = '';
+
+    this.totalCount = p.facts.length; this.filledCount = 0; this.updateProgress();
+
+    p.facts.forEach((_, i)=>{
+      const slot = document.createElement('div');
+      slot.className = 'text-slot';
+      slot.dataset.index = i;
+      slot.textContent = (i+1) + '. ...';
+      board.appendChild(slot);
+    });
+
+    const shuffled = p.facts.map((text,i)=>({text,i}));
+    shuffle(shuffled);
+    shuffled.forEach(item=>{
+      const chip = document.createElement('div');
+      chip.className = 'text-chip';
+      chip.textContent = item.text;
+      chip.dataset.index = item.i;
+      tray.appendChild(chip);
+      makeDraggableText(chip);
+    });
+  },
+
+  checkTextComplete(){
+    if(this.filledCount === this.totalCount){
+      Progress.markDone(this.current.id);
+      setTimeout(()=>Modal.open(this.current), 350);
+    }
+  },
+
+  useHint(){
+    VK.showRewardedAd(()=>{
+      if(this.mode === 'picture'){
+        const tray = document.getElementById('tray');
+        const piece = tray.querySelector('.piece');
+        if(!piece){ toast('Все фрагменты уже на месте!'); return; }
+        const r = piece.dataset.r, c = piece.dataset.c;
+        const slot = document.querySelector(`.slot[data-r="${r}"][data-c="${c}"]`);
+        snapPieceToSlot(piece, slot);
+        toast('Фрагмент установлен!');
+      } else {
+        const tray = document.getElementById('tray');
+        const chip = tray.querySelector('.text-chip');
+        if(!chip){ toast('Все фрагменты текста уже на месте!'); return; }
+        const idx = chip.dataset.index;
+        const slot = document.querySelector(`.text-slot[data-index="${idx}"]`);
+        snapChipToSlot(chip, slot);
+        toast('Фрагмент установлен!');
+      }
+    });
+  },
+
+  next(){
+    Modal.close();
+    const idx = PUZZLES.findIndex(p=>p.id===this.current.id);
+    const nextPuzzle = PUZZLES[idx+1];
+    if(nextPuzzle){ this.start(nextPuzzle.id); }
+    else { App.goTo('levels'); }
+  },
+
+  share(){
+    VK.shareResult('Я собрал(а) пазл «' + this.current.name + '» в игре «Красная Книга: Пазл»!');
+  }
+};
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+}
+
+/* ---------- снап-хелперы (используются и подсказкой, и drag&drop) ---------- */
+function snapPieceToSlot(piece, slot){
+  slot.classList.add('filled');
+  slot.appendChild(piece);
+  piece.classList.remove('dragging');
+  piece.style.position = 'static';
+  piece.style.left = ''; piece.style.top = '';
+  piece.style.cursor = 'default';
+  piece.draggable = false;
+  Game.filledCount++;
+  Game.updateProgress();
+  Game.checkPictureComplete();
+}
+
+function snapChipToSlot(chip, slot){
+  slot.classList.add('filled');
+  slot.textContent = (parseInt(slot.dataset.index)+1) + '. ' + chip.textContent;
+  chip.remove();
+  Game.filledCount++;
+  Game.updateProgress();
+  Game.checkTextComplete();
+}
+
+/* ---------- drag & drop через Pointer Events (мышь + тач) ---------- */
+function makeDraggable(piece, cell){
+  let offsetX=0, offsetY=0;
+  piece.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    piece.setPointerCapture(e.pointerId);
+    const rect = piece.getBoundingClientRect();
+    offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
+    piece.classList.add('dragging');
+    piece.style.width = cell+'px'; piece.style.height = cell+'px';
+    moveTo(e.clientX, e.clientY);
+
+    function moveTo(x,y){
+      piece.style.left = (x-offsetX)+'px';
+      piece.style.top = (y-offsetY)+'px';
+    }
+    function onMove(ev){ moveTo(ev.clientX, ev.clientY); }
+    function onUp(ev){
+      piece.removeEventListener('pointermove', onMove);
+      piece.removeEventListener('pointerup', onUp);
+      piece.classList.remove('dragging');
+      piece.style.position=''; piece.style.left=''; piece.style.top='';
+
+      const target = document.elementFromPoint(ev.clientX, ev.clientY);
+      const slot = target ? target.closest('.slot') : null;
+      if(slot && !slot.classList.contains('filled') &&
+         slot.dataset.r === piece.dataset.r && slot.dataset.c === piece.dataset.c){
+        snapPieceToSlot(piece, slot);
+      } else {
+        // возвращаем в лоток (встряхивание)
+        piece.style.transition='transform .15s';
+        piece.style.transform='translateX(-4px)';
+        setTimeout(()=>{ piece.style.transform='translateX(4px)'; }, 80);
+        setTimeout(()=>{ piece.style.transform=''; piece.style.transition=''; }, 200);
+        document.getElementById('tray').appendChild(piece);
+      }
+    }
+    piece.addEventListener('pointermove', onMove);
+    piece.addEventListener('pointerup', onUp);
+  });
+}
+
+function makeDraggableText(chip){
+  chip.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    chip.setPointerCapture(e.pointerId);
+    chip.classList.add('dragging');
+    const rect = chip.getBoundingClientRect();
+    const offsetX = e.clientX-rect.left, offsetY = e.clientY-rect.top;
+    chip.style.width = rect.width+'px';
+
+    function onMove(ev){
+      chip.style.left = (ev.clientX-offsetX)+'px';
+      chip.style.top = (ev.clientY-offsetY)+'px';
+    }
+    function onUp(ev){
+      chip.removeEventListener('pointermove', onMove);
+      chip.removeEventListener('pointerup', onUp);
+      chip.classList.remove('dragging');
+      chip.style.position=''; chip.style.left=''; chip.style.top=''; chip.style.width='';
+
+      const target = document.elementFromPoint(ev.clientX, ev.clientY);
+      const slot = target ? target.closest('.text-slot') : null;
+      if(slot && !slot.classList.contains('filled') && slot.dataset.index === chip.dataset.index){
+        snapChipToSlot(chip, slot);
+      } else {
+        document.getElementById('tray').appendChild(chip);
+      }
+    }
+    chip.addEventListener('pointermove', onMove);
+    chip.addEventListener('pointerup', onUp);
+  });
+}
+
+/* ---------------------- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТА ---------------------- */
+const Modal = {
+  open(p){
+    document.getElementById('modal-art').innerHTML = p.art;
+    document.getElementById('modal-name').textContent = p.name;
+    document.getElementById('modal-latin').textContent = p.latin;
+    document.getElementById('modal-status').textContent = p.status;
+    const list = document.getElementById('modal-facts');
+    list.innerHTML = '';
+    p.facts.forEach(f=>{
+      const li = document.createElement('li');
+      li.textContent = f;
+      list.appendChild(li);
+    });
+    const idx = PUZZLES.findIndex(x=>x.id===p.id);
+    document.getElementById('modal-next-btn').style.display = (idx < PUZZLES.length-1) ? 'block' : 'none';
+    document.getElementById('modal-result').classList.add('active');
+  },
+  close(){ document.getElementById('modal-result').classList.remove('active'); }
+};
+
+/* ---------------------- СТАРТ ---------------------- */
+VK.init();
+App.goTo('menu');
+</script>
+</body>
+</html>
