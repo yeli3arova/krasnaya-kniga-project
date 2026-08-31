@@ -74,7 +74,7 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
 /* ---------- TOPBAR ---------- */
 .topbar{
   display:flex; align-items:center; gap:10px;
-  margin-bottom:14px;
+  margin-bottom:10px; flex-wrap:wrap;
 }
 .icon-btn{
   width:40px; height:40px; border-radius:10px;
@@ -82,7 +82,7 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
   display:flex; align-items:center; justify-content:center;
   font-size:18px; cursor:pointer; color:var(--forest); flex-shrink:0;
 }
-.topbar h2{flex:1; font-size:19px;}
+.topbar h2{flex:1; font-size:18px; min-width:100px;}
 
 /* ---------- LEVEL SELECT ---------- */
 .level-list{display:flex; flex-direction:column; gap:14px; padding-bottom:20px;}
@@ -115,6 +115,16 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
   font-size:11px; font-weight:700; color:var(--gold);
 }
 
+/* ---------- COLLECTION ---------- */
+.collection-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.collection-item{
+  aspect-ratio:1/1; border-radius:12px; background:var(--card);
+  display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
+  border:1px solid var(--paper-dark);
+}
+.collection-item.locked{opacity:0.35;}
+.collection-item svg{width:70%; height:70%;}
+
 /* ---------- GAME SCREEN ---------- */
 #screen-game{padding-bottom:0;}
 .mode-toggle{
@@ -127,66 +137,81 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
 .mode-toggle button.active{background:var(--moss); color:#fff;}
 
 .progress-wrap{
-  height:8px; background:var(--paper-dark); border-radius:6px; overflow:hidden; margin-bottom:14px; flex-shrink:0;
+  height:8px; background:var(--paper-dark); border-radius:6px; overflow:hidden; margin-bottom:10px; flex-shrink:0;
 }
 .progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--moss),var(--gold)); transition:width .25s ease;}
 
-.board-wrap{flex:1; display:flex; align-items:center; justify-content:center; min-height:0;}
-#grid{
-  display:grid;
-  gap:3px;
+.hint-row{display:flex; gap:8px; justify-content:center; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0;}
+.hint-row .btn{padding:9px 16px; font-size:12.5px;}
+
+.board-wrap{flex:1; display:flex; align-items:center; justify-content:center; min-height:0; position:relative;}
+
+.board-outer{
+  position:relative;
+  padding: 30px 34px;
+}
+#board{
+  position:relative;
   background:var(--forest);
-  padding:6px;
-  border-radius:12px;
+  border-radius:10px;
   box-shadow: var(--shadow);
+  overflow:hidden;
   touch-action:none;
 }
-.slot{
-  background: rgba(255,255,255,0.15);
-  border-radius:3px;
-  position:relative;
-}
-.slot.filled{background:transparent;}
-.slot .piece-in-slot{position:absolute; inset:0;}
-
-#text-board{
-  display:flex; flex-direction:column; gap:8px; width:100%; max-width:420px; margin:0 auto;
-}
-.text-slot{
-  min-height:46px; border:2px dashed var(--moss); border-radius:10px;
-  background:rgba(255,255,255,0.5);
-  display:flex; align-items:center; padding:0 12px; font-size:13px; color:#8a9583;
-}
-.text-slot.filled{border-style:solid; background:var(--card); color:var(--ink);}
-
-.tray-wrap{flex-shrink:0; padding:12px 0 max(12px, env(safe-area-inset-bottom));}
-.tray{
-  display:flex; gap:10px; overflow-x:auto; padding:8px 4px;
-  background:var(--paper-dark); border-radius:14px;
-  min-height:74px; align-items:center;
-  touch-action:pan-x;
-}
-.piece{
-  border-radius:6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  flex-shrink:0;
+.tile{
+  position:absolute;
+  border:1px solid rgba(255,255,255,0.25);
+  background-color:var(--card);
+  background-repeat:no-repeat;
+  transition: left .22s ease, top .22s ease;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
   cursor:grab;
-  border:2px solid #fff;
 }
-.piece.dragging{
-  position:fixed; z-index:999; pointer-events:none;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-  transform: scale(1.08) rotate(-2deg);
+.tile.text-mode{
+  padding:3px;
+  font-size:10.5px;
+  line-height:1.15;
+  text-align:center;
+  color:var(--ink);
+  background-color:var(--card);
+  font-weight:600;
 }
-.text-chip{
-  flex-shrink:0; background:var(--card); border:2px solid var(--gold);
-  border-radius:10px; padding:10px 14px; font-size:12.5px; max-width:220px;
-  cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,0.18);
+.tile-number{
+  position:absolute; top:2px; left:2px;
+  background:var(--gold); color:#fff; font-size:9px; font-weight:800;
+  border-radius:50%; width:16px; height:16px;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; transition:opacity .2s ease; pointer-events:none;
 }
-.text-chip.dragging{position:fixed; z-index:999; pointer-events:none; transform:scale(1.05);}
+#board.show-hints .tile-number{opacity:1;}
 
-.tray-actions{display:flex; gap:10px; margin-top:10px; justify-content:center;}
-.tray-actions .btn{padding:10px 18px; font-size:13px;}
+/* row/column shift arrows */
+.row-arrow, .col-arrow{
+  position:absolute;
+  background:var(--card);
+  border:2px solid var(--moss);
+  color:var(--forest);
+  border-radius:50%;
+  width:24px; height:24px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:800;
+  cursor:pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index:5;
+}
+.row-arrow:active, .col-arrow:active{transform:scale(0.9);}
+
+.peek-overlay{
+  position:absolute; inset:0; z-index:50;
+  background:rgba(27,48,31,0.55);
+  display:none; align-items:center; justify-content:center;
+  border-radius:10px;
+}
+.peek-overlay.active{display:flex;}
+.peek-overlay .peek-art{width:78%; aspect-ratio:1/1; border-radius:10px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.4); border:4px solid var(--gold);}
+.peek-overlay .peek-art svg{width:100%; height:100%; display:block;}
+.peek-hint-text{position:absolute; bottom:8px; color:#fff; font-size:11px; text-align:center; width:100%;}
 
 /* ---------- RESULT MODAL ---------- */
 .modal-overlay{
@@ -217,16 +242,6 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
 .modal-actions{display:flex; flex-direction:column; gap:9px;}
 .modal-actions .btn{width:100%;}
 
-/* ---------- COLLECTION ---------- */
-.collection-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-.collection-item{
-  aspect-ratio:1/1; border-radius:12px; background:var(--card);
-  display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
-  border:1px solid var(--paper-dark);
-}
-.collection-item.locked{opacity:0.35;}
-.collection-item svg{width:70%; height:70%;}
-
 /* toast */
 #toast{
   position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
@@ -246,7 +261,7 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
       <svg viewBox="0 0 64 64"><path d="M32 6C22 14 12 20 8 30c-3 8 1 18 10 22 5 2 9 0 14-4 5 4 9 6 14 4 9-4 13-14 10-22C52 20 42 14 32 6Z" fill="#F6F1E4"/><path d="M32 16c3 8 3 16 0 24" stroke="#B8860B" stroke-width="2" fill="none"/></svg>
     </div>
     <h1>Красная Книга: Пазл</h1>
-    <p class="tagline">Собирайте пазлы редких животных и пополняйте свою Красную книгу</p>
+    <p class="tagline">Сдвигайте ряды и столбцы, чтобы собрать редких животных</p>
     <div class="menu-stack">
       <button class="btn btn-primary" onclick="App.goTo('levels')">Играть</button>
       <button class="btn btn-secondary" onclick="App.openCollection()">Коллекция</button>
@@ -277,21 +292,24 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
       <div class="icon-btn" onclick="Game.exit()">←</div>
       <h2 id="game-title">Животное</h2>
       <div class="mode-toggle">
-        <button id="mode-pic-btn" class="active" onclick="Game.setMode('picture')">Картина</button>
+        <button id="mode-pic-btn" class="active" onclick="Game.setMode('picture')">Картинка</button>
         <button id="mode-text-btn" onclick="Game.setMode('text')">Текст</button>
       </div>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
 
-    <div class="board-wrap">
-      <div id="grid"></div>
-      <div id="text-board" style="display:none;"></div>
+    <div class="hint-row">
+      <button class="btn btn-secondary" onclick="Game.peek()">👁 Показать целиком</button>
+      <button class="btn btn-gold" onclick="Game.useHint()">💡 Подсказка (реклама)</button>
     </div>
 
-    <div class="tray-wrap">
-      <div class="tray" id="tray"></div>
-      <div class="tray-actions">
-        <button class="btn btn-gold" onclick="Game.useHint()">💡 Подсказка (реклама)</button>
+    <div class="board-wrap">
+      <div class="board-outer" id="board-outer">
+        <div id="board"></div>
+        <div class="peek-overlay" id="peek-overlay" onclick="Game.closePeek()">
+          <div class="peek-art" id="peek-art"></div>
+          <div class="peek-hint-text">Нажмите, чтобы закрыть</div>
+        </div>
       </div>
     </div>
   </div>
@@ -319,6 +337,8 @@ h1,h2,h3{font-family: Georgia, "Times New Roman", serif; margin:0; color:var(--f
 <script>
 /* =========================================================================
    КРАСНАЯ КНИГА: ПАЗЛ — прототип игровой логики
+   Механика — как в Art of Fauna: сдвиг рядов/столбцов (loopover), доска
+   переворачивается между картинкой и текстом с общим прогрессом.
    Готов для встраивания в VK Mini App / VK Play (HTML5).
    Для реального деплоя на VK:
      1) Подключить SDK:  script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"
@@ -336,14 +356,12 @@ const VK = {
       this.bridge.send('VKWebAppInit').then(()=>{ this.ready = true; }).catch(()=>{});
     }
   },
-  // Награждаемая реклама за подсказку / открытие раздела
   showRewardedAd(onSuccess){
     if(this.bridge){
       this.bridge.send('VKWebAppShowNativeAds', { ad_format: 'reward' })
         .then((data)=>{ if(data && data.result){ onSuccess(); } })
         .catch(()=>{ toast('Реклама недоступна'); });
     } else {
-      // Локальная заглушка для тестирования вне VK
       if(confirm('[Заглушка] Показать рекламу за подсказку?')) onSuccess();
     }
   },
@@ -355,7 +373,6 @@ const VK = {
     }
   },
   saveProgress(key, value){
-    // В реальном приложении: VKWebAppStorageSet. Здесь — localStorage.
     try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){}
   },
   loadProgress(key, fallback){
@@ -375,7 +392,6 @@ function toast(msg){
 }
 
 /* ---------------------- ОРИГИНАЛЬНЫЕ ИЛЛЮСТРАЦИИ (SVG) ---------------------- */
-/* Простая плоская векторная графика — заглушки под финальные ассеты художника. */
 const ART = {
   tiger: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
     <rect width="200" height="200" fill="#E8862A"/>
@@ -461,6 +477,20 @@ const PUZZLES = [
   }
 ];
 
+// Разбиваем описание животного на текстовые фрагменты — по одному на каждую плитку,
+// в том же порядке чтения, что и картинка (слева-направо, сверху-вниз).
+function buildTextChunks(puzzle){
+  const words = puzzle.facts.join(' ').split(' ').filter(Boolean);
+  const total = puzzle.grid * puzzle.grid;
+  const perChunk = Math.max(1, Math.ceil(words.length / total));
+  const chunks = [];
+  for(let i=0;i<total;i++){
+    const slice = words.slice(i*perChunk, (i+1)*perChunk);
+    chunks.push(slice.join(' ') || '···');
+  }
+  return chunks;
+}
+
 /* ---------------------- ХРАНИЛИЩЕ ПРОГРЕССА ---------------------- */
 const Progress = {
   data: VK.loadProgress('rk_progress', { completed: [] }),
@@ -490,7 +520,7 @@ const App = {
         <div class="level-thumb">${p.art}</div>
         <div class="level-info">
           <div class="name">${p.name}</div>
-          <div class="meta">${p.grid}×${p.grid} фрагментов</div>
+          <div class="meta">${p.grid}×${p.grid} плиток</div>
           <span class="diff-pill">${p.grid<=3?'Лёгкий':p.grid===4?'Средний':'Сложный'}</span>
         </div>`;
       list.appendChild(card);
@@ -510,12 +540,14 @@ const App = {
   openCollection(){ this.goTo('collection'); }
 };
 
-/* ---------------------- ИГРОВАЯ ЛОГИКА ---------------------- */
+/* ---------------------- ИГРОВАЯ ЛОГИКА (сдвиг рядов/столбцов) ---------------------- */
 const Game = {
   current:null,
   mode:'picture',
-  filledCount:0,
-  totalCount:0,
+  n:0,            // размер сетки n×n
+  cell:0,         // размер плитки в px
+  tiles:[],       // массив плиток {origIndex, r, c, el}
+  textChunks:[],
 
   start(id){
     this.current = PUZZLES.find(p=>p.id===id);
@@ -524,137 +556,193 @@ const Game = {
     document.getElementById('mode-text-btn').classList.remove('active');
     document.getElementById('game-title').textContent = this.current.name;
     App.goTo('game');
-    this.buildPicture();
+    this.textChunks = buildTextChunks(this.current);
+    this.buildBoard();
   },
 
   exit(){ App.goTo('levels'); },
+
+  buildBoard(){
+    const p = this.current;
+    const n = p.grid;
+    this.n = n;
+
+    const board = document.getElementById('board');
+    const boardOuter = document.getElementById('board-outer');
+    board.innerHTML = '';
+
+    const maxSize = Math.min(window.innerWidth - 90, window.innerHeight * 0.5, 320);
+    const cell = Math.floor(maxSize / n);
+    this.cell = cell;
+    board.style.width = (cell*n) + 'px';
+    board.style.height = (cell*n) + 'px';
+    boardOuter.style.width = (cell*n + 68) + 'px';
+
+    // solved state: tile origIndex i sits at r=Math.floor(i/n), c=i%n
+    this.tiles = [];
+    for(let i=0;i<n*n;i++){
+      this.tiles.push({ origIndex:i, r:Math.floor(i/n), c:i%n });
+    }
+
+    // shuffle via random row/column cyclic shifts (always solvable — built by reverse moves)
+    for(let k=0;k<n*14;k++){
+      if(Math.random()<0.5){
+        this.shiftRow(Math.floor(Math.random()*n), Math.random()<0.5?'left':'right', true);
+      } else {
+        this.shiftCol(Math.floor(Math.random()*n), Math.random()<0.5?'up':'down', true);
+      }
+    }
+
+    this.renderTiles(true);
+    this.renderArrows();
+    this.updateProgress();
+  },
+
+  renderTiles(instant){
+    const board = document.getElementById('board');
+    const p = this.current;
+    const n = this.n;
+    const cell = this.cell;
+    const imgUri = svgToDataUri(p.art);
+
+    this.tiles.forEach(t=>{
+      let el = t.el;
+      if(!el){
+        el = document.createElement('div');
+        el.className = 'tile';
+        el.style.width = cell+'px';
+        el.style.height = cell+'px';
+        const num = document.createElement('div');
+        num.className = 'tile-number';
+        num.textContent = t.origIndex+1;
+        el.appendChild(num);
+        board.appendChild(el);
+        t.el = el;
+        makeSwipable(el, t, this);
+      }
+      if(instant){ el.style.transition = 'none'; }
+      el.style.left = (t.c*cell)+'px';
+      el.style.top = (t.r*cell)+'px';
+      if(instant){ requestAnimationFrame(()=>{ el.style.transition=''; }); }
+
+      const origR = Math.floor(t.origIndex/n), origC = t.origIndex%n;
+      if(this.mode === 'picture'){
+        el.classList.remove('text-mode');
+        el.style.backgroundImage = `url("${imgUri}")`;
+        el.style.backgroundSize = `${cell*n}px ${cell*n}px`;
+        el.style.backgroundPosition = `-${origC*cell}px -${origR*cell}px`;
+        el.textContent = '';
+        el.appendChild(el.querySelector('.tile-number') || document.createElement('div'));
+      } else {
+        el.classList.add('text-mode');
+        el.style.backgroundImage = 'none';
+        el.textContent = this.textChunks[t.origIndex];
+        const num = document.createElement('div');
+        num.className='tile-number'; num.textContent = t.origIndex+1;
+        el.appendChild(num);
+      }
+    });
+  },
+
+  renderArrows(){
+    const boardOuter = document.getElementById('board-outer');
+    boardOuter.querySelectorAll('.row-arrow, .col-arrow').forEach(a=>a.remove());
+    const n = this.n, cell = this.cell;
+    for(let r=0;r<n;r++){
+      const left = mkArrow('◀', 4, 30 + r*cell + cell/2 - 12, ()=>this.shiftRow(r,'left'));
+      const right = mkArrow('▶', 4 + cell*n + 24, 30 + r*cell + cell/2 - 12, ()=>this.shiftRow(r,'right'));
+      boardOuter.appendChild(left); boardOuter.appendChild(right);
+    }
+    for(let c=0;c<n;c++){
+      const up = mkArrow('▲', 34 + c*cell + cell/2 - 12, 2, ()=>this.shiftCol(c,'up'));
+      const down = mkArrow('▼', 34 + c*cell + cell/2 - 12, 4 + cell*n + 24, ()=>this.shiftCol(c,'down'));
+      boardOuter.appendChild(up); boardOuter.appendChild(down);
+    }
+    function mkArrow(symbol, left, top, onClick){
+      const a = document.createElement('div');
+      a.className = symbol==='◀'||symbol==='▶' ? 'row-arrow' : 'col-arrow';
+      a.textContent = symbol;
+      a.style.left = left+'px'; a.style.top = top+'px';
+      a.onclick = onClick;
+      return a;
+    }
+  },
+
+  shiftRow(r, dir, silent){
+    const n = this.n;
+    const rowTiles = this.tiles.filter(t=>t.r===r).sort((a,b)=>a.c-b.c);
+    if(dir==='left'){
+      const first = rowTiles[0].c;
+      rowTiles.forEach((t,i)=>{ t.c = i===rowTiles.length-1 ? first : rowTiles[i+1].c; });
+    } else {
+      const last = rowTiles[rowTiles.length-1].c;
+      for(let i=rowTiles.length-1;i>=0;i--){
+        rowTiles[i].c = i===0 ? last : rowTiles[i-1].c;
+      }
+    }
+    if(!silent){ this.renderTiles(false); this.updateProgress(); this.checkComplete(); }
+  },
+
+  shiftCol(c, dir, silent){
+    const colTiles = this.tiles.filter(t=>t.c===c).sort((a,b)=>a.r-b.r);
+    if(dir==='up'){
+      const first = colTiles[0].r;
+      colTiles.forEach((t,i)=>{ t.r = i===colTiles.length-1 ? first : colTiles[i+1].r; });
+    } else {
+      const last = colTiles[colTiles.length-1].r;
+      for(let i=colTiles.length-1;i>=0;i--){
+        colTiles[i].r = i===0 ? last : colTiles[i-1].r;
+      }
+    }
+    if(!silent){ this.renderTiles(false); this.updateProgress(); this.checkComplete(); }
+  },
 
   setMode(mode){
     if(this.mode === mode) return;
     this.mode = mode;
     document.getElementById('mode-pic-btn').classList.toggle('active', mode==='picture');
     document.getElementById('mode-text-btn').classList.toggle('active', mode==='text');
-    document.getElementById('grid').style.display = mode==='picture' ? 'grid' : 'none';
-    document.getElementById('text-board').style.display = mode==='text' ? 'flex' : 'none';
-    if(mode==='picture') this.buildPicture(); else this.buildText();
+    this.renderTiles(false);
   },
 
   updateProgress(){
-    const pct = this.totalCount ? Math.round((this.filledCount/this.totalCount)*100) : 0;
-    document.getElementById('progress-bar').style.width = pct + '%';
-  },
-
-  /* ---------- РЕЖИМ «КАРТИНА»: drag & drop фрагментов сетки ---------- */
-  buildPicture(){
-    const p = this.current;
-    const n = p.grid;
-    const grid = document.getElementById('grid');
-    const tray = document.getElementById('tray');
-    grid.innerHTML = ''; tray.innerHTML = '';
-    grid.style.display = 'grid';
-    document.getElementById('text-board').style.display = 'none';
-
-    const boardSize = Math.min(window.innerWidth - 40, 340);
-    const cell = Math.floor(boardSize / n);
-    grid.style.gridTemplateColumns = `repeat(${n}, ${cell}px)`;
-    grid.style.gridTemplateRows = `repeat(${n}, ${cell}px)`;
-
-    this.totalCount = n*n; this.filledCount = 0; this.updateProgress();
-
-    // slots
-    const slots = [];
-    for(let r=0;r<n;r++){
-      for(let c=0;c<n;c++){
-        const slot = document.createElement('div');
-        slot.className = 'slot';
-        slot.dataset.r = r; slot.dataset.c = c;
-        grid.appendChild(slot);
-        slots.push(slot);
-      }
-    }
-
-    // pieces (shuffled)
-    const order = [];
-    for(let r=0;r<n;r++) for(let c=0;c<n;c++) order.push({r,c});
-    shuffle(order);
-
-    const imgUri = svgToDataUri(p.art);
-    order.forEach(pos=>{
-      const piece = document.createElement('div');
-      piece.className = 'piece';
-      piece.style.width = cell+'px';
-      piece.style.height = cell+'px';
-      piece.style.backgroundImage = `url("${imgUri}")`;
-      piece.style.backgroundSize = `${cell*n}px ${cell*n}px`;
-      piece.style.backgroundPosition = `-${pos.c*cell}px -${pos.r*cell}px`;
-      piece.dataset.r = pos.r; piece.dataset.c = pos.c;
-      tray.appendChild(piece);
-      makeDraggable(piece, cell);
+    const n = this.n;
+    let correct = 0;
+    this.tiles.forEach(t=>{
+      const origR = Math.floor(t.origIndex/n), origC = t.origIndex%n;
+      if(t.r===origR && t.c===origC) correct++;
     });
+    const pct = Math.round((correct/this.tiles.length)*100);
+    document.getElementById('progress-bar').style.width = pct+'%';
+    return correct === this.tiles.length;
   },
 
-  checkPictureComplete(){
-    if(this.filledCount === this.totalCount){
+  checkComplete(){
+    const n = this.n;
+    const done = this.tiles.every(t=>{
+      const origR = Math.floor(t.origIndex/n), origC = t.origIndex%n;
+      return t.r===origR && t.c===origC;
+    });
+    if(done){
       Progress.markDone(this.current.id);
-      setTimeout(()=>Modal.open(this.current), 350);
+      setTimeout(()=>Modal.open(this.current), 300);
     }
   },
 
-  /* ---------- РЕЖИМ «ТЕКСТ»: сборка фактов в верном порядке ---------- */
-  buildText(){
-    const p = this.current;
-    const board = document.getElementById('text-board');
-    const tray = document.getElementById('tray');
-    board.innerHTML = ''; tray.innerHTML = '';
-
-    this.totalCount = p.facts.length; this.filledCount = 0; this.updateProgress();
-
-    p.facts.forEach((_, i)=>{
-      const slot = document.createElement('div');
-      slot.className = 'text-slot';
-      slot.dataset.index = i;
-      slot.textContent = (i+1) + '. ...';
-      board.appendChild(slot);
-    });
-
-    const shuffled = p.facts.map((text,i)=>({text,i}));
-    shuffle(shuffled);
-    shuffled.forEach(item=>{
-      const chip = document.createElement('div');
-      chip.className = 'text-chip';
-      chip.textContent = item.text;
-      chip.dataset.index = item.i;
-      tray.appendChild(chip);
-      makeDraggableText(chip);
-    });
+  peek(){
+    document.getElementById('peek-art').innerHTML = this.current.art;
+    document.getElementById('peek-overlay').classList.add('active');
   },
-
-  checkTextComplete(){
-    if(this.filledCount === this.totalCount){
-      Progress.markDone(this.current.id);
-      setTimeout(()=>Modal.open(this.current), 350);
-    }
+  closePeek(){
+    document.getElementById('peek-overlay').classList.remove('active');
   },
 
   useHint(){
     VK.showRewardedAd(()=>{
-      if(this.mode === 'picture'){
-        const tray = document.getElementById('tray');
-        const piece = tray.querySelector('.piece');
-        if(!piece){ toast('Все фрагменты уже на месте!'); return; }
-        const r = piece.dataset.r, c = piece.dataset.c;
-        const slot = document.querySelector(`.slot[data-r="${r}"][data-c="${c}"]`);
-        snapPieceToSlot(piece, slot);
-        toast('Фрагмент установлен!');
-      } else {
-        const tray = document.getElementById('tray');
-        const chip = tray.querySelector('.text-chip');
-        if(!chip){ toast('Все фрагменты текста уже на месте!'); return; }
-        const idx = chip.dataset.index;
-        const slot = document.querySelector(`.text-slot[data-index="${idx}"]`);
-        snapChipToSlot(chip, slot);
-        toast('Фрагмент установлен!');
-      }
+      const board = document.getElementById('board');
+      board.classList.add('show-hints');
+      toast('Вот правильные номера плиток!');
+      setTimeout(()=>board.classList.remove('show-hints'), 4000);
     });
   },
 
@@ -671,107 +759,32 @@ const Game = {
   }
 };
 
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]] = [arr[j],arr[i]];
-  }
-}
-
-/* ---------- снап-хелперы (используются и подсказкой, и drag&drop) ---------- */
-function snapPieceToSlot(piece, slot){
-  slot.classList.add('filled');
-  slot.appendChild(piece);
-  piece.classList.remove('dragging');
-  piece.style.position = 'static';
-  piece.style.left = ''; piece.style.top = '';
-  piece.style.cursor = 'default';
-  piece.draggable = false;
-  Game.filledCount++;
-  Game.updateProgress();
-  Game.checkPictureComplete();
-}
-
-function snapChipToSlot(chip, slot){
-  slot.classList.add('filled');
-  slot.textContent = (parseInt(slot.dataset.index)+1) + '. ' + chip.textContent;
-  chip.remove();
-  Game.filledCount++;
-  Game.updateProgress();
-  Game.checkTextComplete();
-}
-
-/* ---------- drag & drop через Pointer Events (мышь + тач) ---------- */
-function makeDraggable(piece, cell){
-  let offsetX=0, offsetY=0;
-  piece.addEventListener('pointerdown', (e)=>{
+/* ---------- свайп по плитке: определяет ряд/столбец для сдвига ---------- */
+function makeSwipable(el, tile, game){
+  el.addEventListener('pointerdown', (e)=>{
     e.preventDefault();
-    piece.setPointerCapture(e.pointerId);
-    const rect = piece.getBoundingClientRect();
-    offsetX = e.clientX - rect.left; offsetY = e.clientY - rect.top;
-    piece.classList.add('dragging');
-    piece.style.width = cell+'px'; piece.style.height = cell+'px';
-    moveTo(e.clientX, e.clientY);
-
-    function moveTo(x,y){
-      piece.style.left = (x-offsetX)+'px';
-      piece.style.top = (y-offsetY)+'px';
-    }
-    function onMove(ev){ moveTo(ev.clientX, ev.clientY); }
-    function onUp(ev){
-      piece.removeEventListener('pointermove', onMove);
-      piece.removeEventListener('pointerup', onUp);
-      piece.classList.remove('dragging');
-      piece.style.position=''; piece.style.left=''; piece.style.top='';
-
-      const target = document.elementFromPoint(ev.clientX, ev.clientY);
-      const slot = target ? target.closest('.slot') : null;
-      if(slot && !slot.classList.contains('filled') &&
-         slot.dataset.r === piece.dataset.r && slot.dataset.c === piece.dataset.c){
-        snapPieceToSlot(piece, slot);
-      } else {
-        // возвращаем в лоток (встряхивание)
-        piece.style.transition='transform .15s';
-        piece.style.transform='translateX(-4px)';
-        setTimeout(()=>{ piece.style.transform='translateX(4px)'; }, 80);
-        setTimeout(()=>{ piece.style.transform=''; piece.style.transition=''; }, 200);
-        document.getElementById('tray').appendChild(piece);
-      }
-    }
-    piece.addEventListener('pointermove', onMove);
-    piece.addEventListener('pointerup', onUp);
-  });
-}
-
-function makeDraggableText(chip){
-  chip.addEventListener('pointerdown', (e)=>{
-    e.preventDefault();
-    chip.setPointerCapture(e.pointerId);
-    chip.classList.add('dragging');
-    const rect = chip.getBoundingClientRect();
-    const offsetX = e.clientX-rect.left, offsetY = e.clientY-rect.top;
-    chip.style.width = rect.width+'px';
+    el.setPointerCapture(e.pointerId);
+    const startX = e.clientX, startY = e.clientY;
+    let moved = false;
 
     function onMove(ev){
-      chip.style.left = (ev.clientX-offsetX)+'px';
-      chip.style.top = (ev.clientY-offsetY)+'px';
+      const dx = ev.clientX-startX, dy = ev.clientY-startY;
+      if(Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
     }
     function onUp(ev){
-      chip.removeEventListener('pointermove', onMove);
-      chip.removeEventListener('pointerup', onUp);
-      chip.classList.remove('dragging');
-      chip.style.position=''; chip.style.left=''; chip.style.top=''; chip.style.width='';
-
-      const target = document.elementFromPoint(ev.clientX, ev.clientY);
-      const slot = target ? target.closest('.text-slot') : null;
-      if(slot && !slot.classList.contains('filled') && slot.dataset.index === chip.dataset.index){
-        snapChipToSlot(chip, slot);
-      } else {
-        document.getElementById('tray').appendChild(chip);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      if(!moved) return;
+      const dx = ev.clientX-startX, dy = ev.clientY-startY;
+      const threshold = 18;
+      if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold){
+        game.shiftRow(tile.r, dx>0 ? 'right' : 'left');
+      } else if(Math.abs(dy) > threshold){
+        game.shiftCol(tile.c, dy>0 ? 'down' : 'up');
       }
     }
-    chip.addEventListener('pointermove', onMove);
-    chip.addEventListener('pointerup', onUp);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
   });
 }
 
